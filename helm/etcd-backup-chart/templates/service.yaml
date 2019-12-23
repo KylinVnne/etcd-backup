@@ -10,8 +10,10 @@ metadata:
 spec:
   type: NodePort
   ports:
-    - port: 8080
-    - port: 2112
+    - name: http
+      port: 8080
+    - name: prometheus
+      port: 2112
   selector:
     app: etcd-backup
 
