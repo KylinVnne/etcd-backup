@@ -88,10 +88,28 @@ func (s *Service) BackupHostCluster() error {
 		// run backup task
 		err, backupMetrics := etcd.FullBackup(&v2)
 		if err != nil {
-			metrics.Send(s.PrometheusConfig, metrics.NewFailureMetrics(), "")
+			sent, merr := metrics.Send(s.PrometheusConfig, metrics.NewFailureMetrics(), "Control Plane")
+			if sent {
+				if merr != nil {
+					s.Logger.Log("level", "info", "msg", fmt.Sprintf("Error sending metrics to push gateway for: %s (%s)", v2.Prefix, err))
+				} else {
+					s.Logger.Log("level", "info", "msg", "Successfully sent metrics to push gateway for: "+v2.Prefix)
+				}
+			} else {
+				s.Logger.Log("level", "info", "msg", "Did NOT send metrics to push gateway for: "+v2.Prefix)
+			}
 			return microerror.Mask(err)
 		} else {
-			metrics.Send(s.PrometheusConfig, backupMetrics, "")
+			sent, err := metrics.Send(s.PrometheusConfig, backupMetrics, "Control Plane")
+			if sent {
+				if err != nil {
+					s.Logger.Log("level", "info", "msg", fmt.Sprintf("Error sending metrics to push gateway for: %s (%s)", v2.Prefix, err))
+				} else {
+					s.Logger.Log("level", "info", "msg", "Successfully sent metrics to push gateway for: "+v2.Prefix)
+				}
+			} else {
+				s.Logger.Log("level", "info", "msg", "Did NOT send metrics to push gateway for: "+v2.Prefix)
+			}
 		}
 	}
 
@@ -124,7 +142,7 @@ func (s *Service) BackupHostCluster() error {
 
 		s.Logger.Log("level", "info", "msg", "Cluster backup created for: "+v3.Prefix)
 
-		sent, err := metrics.Send(s.PrometheusConfig, backupMetrics, "")
+		sent, err := metrics.Send(s.PrometheusConfig, backupMetrics, "Control Plane")
 
 		if sent {
 			if err != nil {
@@ -143,7 +161,16 @@ func (s *Service) BackupHostCluster() error {
 
 	err = backoff.Retry(o, b)
 	if err != nil {
-		metrics.Send(s.PrometheusConfig, metrics.NewFailureMetrics(), "")
+		sent, err := metrics.Send(s.PrometheusConfig, metrics.NewFailureMetrics(), "Control Plane")
+		if sent {
+			if err != nil {
+				s.Logger.Log("level", "info", "msg", fmt.Sprintf("Error sending metrics to push gateway for: %s (%s)", v3.Prefix, err))
+			} else {
+				s.Logger.Log("level", "info", "msg", "Successfully sent metrics to push gateway for: "+v3.Prefix)
+			}
+		} else {
+			s.Logger.Log("level", "info", "msg", "Did NOT send metrics to push gateway for: "+v3.Prefix)
+		}
 		return microerror.Mask(err)
 	}
 
@@ -244,7 +271,16 @@ func (s *Service) BackupGuestClusters() error {
 
 			s.Logger.Log("level", "info", "msg", "Cluster backup created for: "+clusterID)
 
-			metrics.Send(s.PrometheusConfig, backupMetrics, clusterID)
+			sent, err := metrics.Send(s.PrometheusConfig, backupMetrics, clusterID)
+			if sent {
+				if err != nil {
+					s.Logger.Log("level", "info", "msg", fmt.Sprintf("Error sending metrics to push gateway for: %s (%s)", clusterID, err))
+				} else {
+					s.Logger.Log("level", "info", "msg", "Successfully sent metrics to push gateway for: "+clusterID)
+				}
+			} else {
+				s.Logger.Log("level", "info", "msg", "Did NOT send metrics to push gateway for: "+clusterID)
+			}
 
 			return nil
 		}
@@ -255,7 +291,16 @@ func (s *Service) BackupGuestClusters() error {
 		if err != nil {
 			failed = true
 			s.Logger.Log("level", "error", "msg", "Failed to backup etcd cluster "+clusterID, "reason", err)
-			metrics.Send(s.PrometheusConfig, metrics.NewFailureMetrics(), clusterID)
+			sent, err := metrics.Send(s.PrometheusConfig, metrics.NewFailureMetrics(), clusterID)
+			if sent {
+				if err != nil {
+					s.Logger.Log("level", "info", "msg", fmt.Sprintf("Error sending metrics to push gateway for: %s (%s)", clusterID, err))
+				} else {
+					s.Logger.Log("level", "info", "msg", "Successfully sent metrics to push gateway for: "+clusterID)
+				}
+			} else {
+				s.Logger.Log("level", "info", "msg", "Did NOT send metrics to push gateway for: "+clusterID)
+			}
 		}
 	}
 
