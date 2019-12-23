@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: etcd-backup
-  namespace: {{ .Values.namespace }}
+  namespace: kube-system
   labels:
     app: etcd-backup
 spec:
