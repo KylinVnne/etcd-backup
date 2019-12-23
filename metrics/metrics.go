@@ -32,7 +32,7 @@ func Send(prometheusConfig *config.PrometheusConfig, metrics *BackupMetrics, ten
 		return true, microerror.Mask(err)
 	}
 
-	_, err = http.Post("http://etcd-backup-metrics-collector:8080/", "application/json", bytes.NewBuffer(data))
+	_, err = http.Post("http://etcd-backup-metrics:8080/", "application/json", bytes.NewBuffer(data))
 
 	return true, err
 }

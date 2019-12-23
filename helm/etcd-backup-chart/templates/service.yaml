@@ -1,21 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: etcd-backup-metrics-collector
-  namespace: kube-system
-  labels:
-    app: etcd-backup
-spec:
-  type: NodePort
-  ports:
-  - port: 8080
-  selector:
-    app: etcd-backup
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: etcd-backup-metrics-exporter
+  name: etcd-backup-metrics
   namespace: kube-system
   labels:
     app: etcd-backup
@@ -24,6 +10,7 @@ metadata:
 spec:
   type: NodePort
   ports:
+    - port: 8080
     - port: 2112
   selector:
     app: etcd-backup
