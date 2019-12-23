@@ -29,6 +29,10 @@ var (
 		Name: prometheus.BuildFQName(namespace, "", "size_bytes"),
 		Help: "Gauge about the size of the backup file, as seen by S3.",
 	}, labels)
+	attemptsCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: prometheus.BuildFQName(namespace, "", "attempts_count"),
+		Help: "Count of attempted backups",
+	}, labels)
 	successCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: prometheus.BuildFQName(namespace, "", "success_count"),
 		Help: "Count of successful backups",
@@ -50,7 +54,7 @@ func Send(prometheusConfig *config.PrometheusConfig, metrics *BackupMetrics, ten
 
 		if metrics.Successful {
 			// successful backup
-			registry.MustRegister(creationTime, encryptionTime, uploadTime, backupSize, successCounter)
+			registry.MustRegister(creationTime, encryptionTime, uploadTime, backupSize, successCounter, attemptsCounter)
 			pusher := push.New(prometheusConfig.Url, prometheusConfig.Job).Gatherer(registry)
 
 			creationTime.With(labels).Set(float64(metrics.CreationTimeMeasurement))
@@ -58,16 +62,18 @@ func Send(prometheusConfig *config.PrometheusConfig, metrics *BackupMetrics, ten
 			uploadTime.With(labels).Set(float64(metrics.UploadTimeMeasurement))
 			backupSize.With(labels).Set(float64(metrics.BackupSizeMeasurement))
 			successCounter.With(labels).Inc()
+			attemptsCounter.With(labels).Inc()
 
 			if err := pusher.Add(); err != nil {
 				return true, err
 			}
 		} else {
 			// failed backup
-			registry.MustRegister(failureCounter)
+			registry.MustRegister(failureCounter, attemptsCounter)
 			pusher := push.New(prometheusConfig.Url, prometheusConfig.Job).Gatherer(registry)
 
 			failureCounter.With(labels).Inc()
+			attemptsCounter.With(labels).Inc()
 
 			if err := pusher.Add(); err != nil {
 				return true, err
