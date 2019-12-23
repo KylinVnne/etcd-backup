@@ -86,7 +86,6 @@ func (ms Server) Listen() error {
 }
 
 func (ms Server) handler(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("qua\n")
 	if r.Method == "GET" && r.RequestURI == "/healthz" {
 		fmt.Fprint(w, "OK")
 		return
