@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/giantswarm/microerror"
@@ -8,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -84,23 +86,35 @@ func (ms Server) Listen() error {
 }
 
 func (ms Server) handler(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("qua\n")
 	if r.Method == "GET" && r.RequestURI == "/healthz" {
 		fmt.Fprint(w, "OK")
 		return
 	}
 
+	body, _ := ioutil.ReadAll(r.Body)
+
 	var metrics BackupMetrics
 
 	// Try to decode the request body into the struct. If there is an error,
 	// respond to the client with the error message and a 400 status code.
-	err := json.NewDecoder(r.Body).Decode(&metrics)
+	err := json.NewDecoder(bytes.NewBuffer(body)).Decode(&metrics)
 	if err != nil {
 		http.Error(w, "Bad request", http.StatusBadRequest)
 		ms.Logger.Log("msg", err)
 		return
 	}
 
-	recordMetrics("Control Plane", &metrics)
+	var info struct{ Cluster string }
+
+	err = json.NewDecoder(bytes.NewBuffer(body)).Decode(&info)
+	if err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		ms.Logger.Log("msg", err)
+		return
+	}
+
+	recordMetrics(info.Cluster, &metrics)
 
 	fmt.Fprint(w, "OK")
 }

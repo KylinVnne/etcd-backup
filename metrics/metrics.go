@@ -1,52 +1,38 @@
 package metrics
 
 import (
+	"bytes"
+	"encoding/json"
 	"github.com/giantswarm/etcd-backup/config"
+	"github.com/giantswarm/microerror"
+	"net/http"
 )
 
 func Send(prometheusConfig *config.PrometheusConfig, metrics *BackupMetrics, tenantClusterName string) (bool, error) {
+	type bodyType struct {
+		Cluster                   string
+		Successful                bool
+		BackupSizeMeasurement     int64
+		CreationTimeMeasurement   int64
+		EncryptionTimeMeasurement int64
+		UploadTimeMeasurement     int64
+	}
 
-	// RecordMetrics(tenantClusterName, metrics)
+	body := bodyType{
+		Cluster:                   tenantClusterName,
+		Successful:                metrics.Successful,
+		BackupSizeMeasurement:     metrics.BackupSizeMeasurement,
+		CreationTimeMeasurement:   metrics.CreationTimeMeasurement,
+		EncryptionTimeMeasurement: metrics.EncryptionTimeMeasurement,
+		UploadTimeMeasurement:     metrics.UploadTimeMeasurement,
+	}
 
-	return true, nil
+	data, err := json.Marshal(body)
+	if err != nil {
+		return true, microerror.Mask(err)
+	}
 
-	// prometheus URL might be empty, in that case we can't push any metric
-	//if prometheusConfig.Url != "" {
-	//	registry := prometheus.NewRegistry()
-	//
-	//	labels := prometheus.Labels{
-	//		labelTenantClusterId: tenantClusterName,
-	//	}
-	//
-	//	if metrics.Successful {
-	//		// successful backup
-	//		registry.MustRegister(creationTime, encryptionTime, uploadTime, backupSize, successCounter, attemptsCounter)
-	//		pusher := push.New(prometheusConfig.Url, prometheusConfig.Job).Gatherer(registry)
-	//
-	//		creationTime.With(labels).Set(float64(metrics.CreationTimeMeasurement))
-	//		encryptionTime.With(labels).Set(float64(metrics.EncryptionTimeMeasurement))
-	//		uploadTime.With(labels).Set(float64(metrics.UploadTimeMeasurement))
-	//		backupSize.With(labels).Set(float64(metrics.BackupSizeMeasurement))
-	//		successCounter.With(labels).Inc()
-	//		attemptsCounter.With(labels).Inc()
-	//
-	//		if err := pusher.Add(); err != nil {
-	//			return true, err
-	//		}
-	//	} else {
-	//		// failed backup
-	//		registry.MustRegister(failureCounter, attemptsCounter)
-	//		pusher := push.New(prometheusConfig.Url, prometheusConfig.Job).Gatherer(registry)
-	//
-	//		failureCounter.With(labels).Inc()
-	//		attemptsCounter.With(labels).Inc()
-	//
-	//		if err := pusher.Add(); err != nil {
-	//			return true, err
-	//		}
-	//	}
-	//	return true, nil
-	//}
-	//
-	//return false, nil
+	_, err = http.Post("http://etcd-backup-metrics-collector:8080/", "application/json", bytes.NewBuffer(data))
+
+	return true, err
 }
