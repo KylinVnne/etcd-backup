@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: etcd-backup
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: etcd-backup
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: etcd-backup
+  template:
+    metadata:
+      annotations:
+        releasetime: {{ $.Release.Time }}
+      labels:
+        app: etcd-backup
+    spec:
+      serviceAccountName: etcd-backup
+      containers:
+        - name: etcd-backup
+          image: quay.io/giantswarm/etcd-backup:[[ .SHA ]]
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: prometheus
+              containerPort: 2112
+          args:
+            - metricsserver
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
+          resources:
+            requests:
+              cpu: 250m
+              memory: 250Mi
+            limits:
+              cpu: 250m
+              memory: 250Mi
+      imagePullSecrets:
+        - name: etcd-backup-pull-secret

@@ -3,13 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/giantswarm/etcd-backup/config"
+	"github.com/giantswarm/etcd-backup/metrics"
+	"github.com/giantswarm/etcd-backup/service"
+	"github.com/giantswarm/micrologger"
 	"os"
 	"runtime"
-
-	"github.com/giantswarm/micrologger"
-
-	"github.com/giantswarm/etcd-backup/config"
-	"github.com/giantswarm/etcd-backup/service"
 )
 
 // TODO:
@@ -38,6 +37,17 @@ func main() {
 		fmt.Printf("Name:           %s\n", name)
 		fmt.Printf("OS / Arch:      %s / %s\n", runtime.GOOS, runtime.GOARCH)
 		fmt.Printf("Source:         %s\n", source)
+		return
+	}
+
+	// create micrologger
+	loggerConfig := micrologger.Config{}
+	logger, err := micrologger.New(loggerConfig)
+
+	if (len(os.Args) > 1) && (os.Args[1] == "metricsserver") {
+		ms := metrics.New(logger)
+
+		ms.Listen()
 		return
 	}
 
@@ -81,9 +91,6 @@ func main() {
 
 	// check flags
 	config.CheckConfig(f)
-	// create micrologger
-	loggerConfig := micrologger.Config{}
-	logger, err := micrologger.New(loggerConfig)
 
 	// create backup service
 	backupService := service.CreateService(f, logger)

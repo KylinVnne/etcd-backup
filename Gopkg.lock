@@ -335,11 +335,13 @@
   version = "v2.0.7"
 
 [[projects]]
-  digest = "1:831bba5dd87815360fff733b32bd02f3a7e031bcee0234fb4ecf380e71eb9274"
+  digest = "1:142d16dd2b858ab7bcdcc10b520f3d6db6841cdb79b43057e6c98696ddea9800"
   name = "github.com/prometheus/client_golang"
   packages = [
     "prometheus",
     "prometheus/internal",
+    "prometheus/promauto",
+    "prometheus/promhttp",
     "prometheus/push",
   ]
   pruneopts = "UT"
@@ -696,6 +698,8 @@
     "github.com/giantswarm/operatorkit/client/k8srestconfig",
     "github.com/mholt/archiver",
     "github.com/prometheus/client_golang/prometheus",
+    "github.com/prometheus/client_golang/prometheus/promauto",
+    "github.com/prometheus/client_golang/prometheus/promhttp",
     "github.com/prometheus/client_golang/prometheus/push",
     "golang.org/x/crypto/openpgp",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
